@@ -1,0 +1,77 @@
+// Import necessary Viem modules and functions
+import {
+  Address,
+  createWalletClient,
+  http,
+  formatEther,
+  parseEther,
+  publicActions,
+} from "viem";
+import { normalize } from "viem/ens"; // For ENS name normalization
+import { privateKeyToAccount } from "viem/accounts"; // Convert private key to account
+import { sepolia } from "viem/chains"; // Reference to the Sepolia test network
+import dotenv from "dotenv"; // For loading environment variables
+dotenv.config();
+
+// Retrieve QuickNode endpoint and private key from environment variables
+const QUICKNODE_ENDPOINT = process.env.QUICKNODE_ENDPOINT as string;
+const PRIVATE_KEY = process.env.PRIVATE_KEY as Address;
+
+// Convert the private key to an account object
+const account = privateKeyToAccount(PRIVATE_KEY);
+
+// Create a wallet client with the specified account, chain, and HTTP transport
+const walletClient = createWalletClient({
+  account,
+  chain: sepolia,
+  transport: http(QUICKNODE_ENDPOINT),
+}).extend(publicActions);
+
+// Define the amount of ETH to send
+const ethAmount = parseEther("0.001");
+
+// Function to check the sender's balance and ensure it's sufficient
+async function checkBalance() {
+  const balanceFrom = await walletClient.getBalance({
+    address: account.address,
+  });
+
+  if (balanceFrom < ethAmount) {
+    throw new Error("Insufficient ETH balance.");
+  }
+
+  console.log(
+    `The balance of the sender (${account.address}) is: ${formatEther(balanceFrom)} ETH`
+  );
+}
+
+// Main function to execute the transaction
+async function main() {
+  await checkBalance(); // First, check the sender's balance
+
+  // Resolve an ENS name to an Ethereum address
+  const ensAddress = await walletClient.getEnsAddress({
+    name: normalize("vitalik.eth"),
+  });
+
+
+  // Send the transaction to the resolved ENS address
+  const hash = await walletClient.sendTransaction({
+    to: account.address,
+    value: ethAmount,
+  });
+
+  // Log the transaction details
+  console.log(
+    `The transaction of sending ${formatEther(
+      ethAmount
+    )} ETH to ${account.address} is sent to the blockchain`
+  );
+  console.log("Transaction hash:", hash);
+}
+
+// Execute the main function and handle any errors
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

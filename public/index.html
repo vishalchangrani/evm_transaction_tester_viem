@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethereum Transaction Test</title>
+</head>
+<body>
+    <h1>Ethereum Transaction Test</h1>
+    <input type="text" id="rpcEndpoint" placeholder="Enter EVM JSON RPC Endpoint">
+    <button onclick="runTest()">Run test</button>
+    <p id="result"></p>
+
+    <script>
+        async function runTest() {
+            const rpcEndpoint = document.getElementById('rpcEndpoint').value;
+            const response = await fetch('http://localhost:3000/runTest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ rpcEndpoint })
+            });
+            const result = await response.json();
+            document.getElementById('result').innerText = `
+                Average Soft Finality: ${result.averagefirstConfirmationTime} ms
+                Average Soft Finality: ${result.averageSoftFinality} ms
+                Average Hard Finality: ${result.averageHardFinality} ms
+            `;
+        }
+    </script>
+</body>
+</html>
